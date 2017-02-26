@@ -1,0 +1,327 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: yum-repository
+message: YUM repository
+metadata:
+  annotations:
+    description: |-
+      YUM repository server and sync API
+    openshift.io/display-name: YUM repository
+    tags: instant-app,yum-repository
+  creationTimestamp: null
+  name: yum-repository
+objects:
+- apiVersion: v1
+  kind: Route
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: yum-repository
+    name: ${REPOSITORY_SERVICE_NAME}
+  spec:
+    to:
+      kind: Service
+      name: ${REPOSITORY_SERVICE_NAME}
+
+
+- apiVersion: v1
+  kind: Route
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: yum-repository
+    name: ${REPOSITORY_SERVICE_NAME}-api
+  spec:
+    to:
+      kind: Service
+      name: ${REPOSITORY_SERVICE_NAME}-api
+
+
+- apiVersion: "v1"
+  kind: "PersistentVolumeClaim"
+  metadata:
+    name: "${REPOSITORY_SERVICE_NAME}-data"
+  spec:
+    accessModes:
+      - "ReadWriteMany"
+    resources:
+      requests:
+        storage: "10Gi"
+    volumeName: "${REPOSITORY_SERVICE_NAME}-data"
+
+
+- apiVersion: "v1"
+  kind: "PersistentVolumeClaim"
+  metadata:
+    name: "${REPOSITORY_SERVICE_NAME}-db"
+  spec:
+    accessModes:
+      - "ReadWriteMany"
+    resources:
+      requests:
+        storage: "10Gi"
+    volumeName: "${REPOSITORY_SERVICE_NAME}-db"
+
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: yum-repository
+    creationTimestamp: null
+    name: ${REPOSITORY_SERVICE_NAME}
+  spec:
+    replicas: 1
+    selector:
+      name: ${REPOSITORY_SERVICE_NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: yum-repository
+          name: ${REPOSITORY_SERVICE_NAME}
+      spec:
+        containers:
+        - capabilities: {}
+          image: 172.30.9.255:5000/openshift/httpd:alpine
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 420
+            timeoutSeconds: 3
+          name: yum-repository
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: ${MEMORY_LIMIT}
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /usr/local/apache2/htdocs/
+            name: ${REPOSITORY_SERVICE_NAME}-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        serviceAccountName: ${REPOSITORY_SERVICE_NAME}
+        volumes:
+        - name: ${REPOSITORY_SERVICE_NAME}-data
+          persistentVolumeClaim:
+          claimName: ${REPOSITORY_SERVICE_NAME}-data
+    triggers:
+    - type: ConfigChange
+
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: yum-repository
+    creationTimestamp: null
+    name: ${REPOSITORY_SERVICE_NAME}-api
+  spec:
+    replicas: 1
+    selector:
+      name: ${REPOSITORY_SERVICE_NAME}-api
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: yum-repository
+          name: ${REPOSITORY_SERVICE_NAME}-api
+      spec:
+        containers:
+        - name: ${REPOSITORY_SERVICE_NAME}-api
+          capabilities: {}
+          image: 172.30.9.255:5000/repositories/reposync:1.1
+          imagePullPolicy: Always
+          env:
+            - name: LOCALREPO_LOCATION
+              value: /tmp/repos
+            - name: RETHINKDB_HOST
+              value: ${REPOSITORY_SERVICE_NAME}-db
+            - name: RETHINKDB_PORT
+              value:
+          livenessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 420
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: ${MEMORY_LIMIT}
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /tmp/repos
+            name: ${REPOSITORY_SERVICE_NAME}-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        serviceAccountName: ${REPOSITORY_SERVICE_NAME}
+        volumes:
+        - name: ${REPOSITORY_SERVICE_NAME}-data
+          persistentVolumeClaim:
+          claimName: ${REPOSITORY_SERVICE_NAME}-data
+    triggers:
+    - type: ConfigChange
+
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: yum-repository
+    creationTimestamp: null
+    name: ${REPOSITORY_SERVICE_NAME}-db
+  spec:
+    replicas: 1
+    selector:
+      name: ${REPOSITORY_SERVICE_NAME}-db
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: yum-repository
+          name: ${REPOSITORY_SERVICE_NAME}-db
+      spec:
+        containers:
+        - name: ${REPOSITORY_SERVICE_NAME}-db
+          capabilities: {}
+          image: docker.io/rethinkdb:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: ${MEMORY_LIMIT}
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /data
+            name: ${REPOSITORY_SERVICE_NAME}-db
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        serviceAccountName: ${REPOSITORY_SERVICE_NAME}
+        volumes:
+        - name: ${REPOSITORY_SERVICE_NAME}-db
+          persistentVolumeClaim:
+          claimName: ${REPOSITORY_SERVICE_NAME}-db
+    triggers:
+    - type: ConfigChange
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: ${REPOSITORY_SERVICE_NAME}
+- apiVersion: v1
+  groupNames: null
+  kind: RoleBinding
+  metadata:
+    name: ${REPOSITORY_SERVICE_NAME}_edit
+  roleRef:
+    name: edit
+  subjects:
+  - kind: ServiceAccount
+    name: ${REPOSITORY_SERVICE_NAME}
+
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: ${REPOSITORY_SERVICE_NAME}
+  spec:
+    ports:
+    - name: ${REPOSITORY_SERVICE_NAME}
+      nodePort: 0
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      name: ${REPOSITORY_SERVICE_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: ${REPOSITORY_SERVICE_NAME}-api
+  spec:
+    ports:
+    - name: ${REPOSITORY_SERVICE_NAME}-api
+      nodePort: 0
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      name: ${REPOSITORY_SERVICE_NAME}-api
+    sessionAffinity: None
+    type: ClusterIP
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: ${REPOSITORY_SERVICE_NAME}-db
+  spec:
+    ports:
+    - name: ${REPOSITORY_SERVICE_NAME}-db
+      nodePort: 0
+      port: 28015
+      protocol: TCP
+      targetPort: 28015
+    - name: ${REPOSITORY_SERVICE_NAME}-db-admin
+      nodePort: 0
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      name: ${REPOSITORY_SERVICE_NAME}-db
+    sessionAffinity: None
+    type: ClusterIP
+
+
+parameters:
+- description: The name of the OpenShift Service exposed for the YUM repository container.
+  displayName: YUM Repository Service Name
+  name: REPOSITORY_SERVICE_NAME
+  value: yum-repository
+- description: Maximum amount of memory the container can use.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  value: 512Mi
+- description: The OpenShift Namespace where the HTTPD ImageStream resides.
+  displayName: HTTPD ImageStream Namespace
+  name: NAMESPACE
+  value: openshift
+- description: Name of the ImageStreamTag to be used for the Jenkins image.
+  displayName: HTTPD ImageStreamTag
+  name: HTTPD_IMAGE_STREAM_TAG
+  value: httpd:apline
+
