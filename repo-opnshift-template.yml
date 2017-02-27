@@ -86,7 +86,7 @@ objects:
       spec:
         containers:
         - capabilities: {}
-          image: 172.30.9.255:5000/openshift/httpd:alpine
+          image: ${HTTPD_IMAGE}
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 30
@@ -146,7 +146,7 @@ objects:
         containers:
         - name: ${REPOSITORY_SERVICE_NAME}-api
           capabilities: {}
-          image: 172.30.9.255:5000/repositories/reposync:1.1
+          image: ${REPOSYNC_IMAGE}
           imagePullPolicy: Always
           env:
             - name: LOCALREPO_LOCATION
@@ -154,7 +154,7 @@ objects:
             - name: RETHINKDB_HOST
               value: ${REPOSITORY_SERVICE_NAME}-db
             - name: RETHINKDB_PORT
-              value:
+              value: "28015"
           livenessProbe:
             failureThreshold: 30
             httpGet:
@@ -212,7 +212,7 @@ objects:
         containers:
         - name: ${REPOSITORY_SERVICE_NAME}-db
           capabilities: {}
-          image: docker.io/rethinkdb:latest
+          image: ${RETHINKDB_IMAGE}
           imagePullPolicy: Always
           resources:
             limits:
@@ -272,6 +272,8 @@ objects:
   metadata:
     creationTimestamp: null
     name: ${REPOSITORY_SERVICE_NAME}-api
+    labels:
+      app: yum-repository
   spec:
     ports:
     - name: ${REPOSITORY_SERVICE_NAME}-api
@@ -289,6 +291,8 @@ objects:
   metadata:
     creationTimestamp: null
     name: ${REPOSITORY_SERVICE_NAME}-db
+    labels:
+      app: yum-repository
   spec:
     ports:
     - name: ${REPOSITORY_SERVICE_NAME}-db
@@ -316,12 +320,15 @@ parameters:
   displayName: Memory Limit
   name: MEMORY_LIMIT
   value: 512Mi
-- description: The OpenShift Namespace where the HTTPD ImageStream resides.
-  displayName: HTTPD ImageStream Namespace
-  name: NAMESPACE
-  value: openshift
-- description: Name of the ImageStreamTag to be used for the Jenkins image.
+- description: Name of the Image to be used for the RethinkDB server.
+  displayName: RethinkDB Image
+  name: RETHINKDB_IMAGE
+  value: docker.io/rethinkdb:latest
+- description: Name of the Image to be used for the HTTP server.
   displayName: HTTPD ImageStreamTag
-  name: HTTPD_IMAGE_STREAM_TAG
-  value: httpd:apline
-
+  name: HTTPD_IMAGE
+  value: 172.30.9.255:5000/openshift/httpd:alpine
+- description: Name of the Image to be used for the Reposync Image
+  displayName: Reposync image
+  name: REPOSYNC_IMAGE 
+  value: 172.30.9.255:5000/repositories/reposync:1.1
