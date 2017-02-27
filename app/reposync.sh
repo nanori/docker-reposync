@@ -22,15 +22,15 @@ function f_repo_sync_yum {
 
 	repofile=${TEMP_DIR}/${repo}.repo
 
-	echo "INFO  | Starting reposync for repoid '${repo}' to '${download_path} using reposync"
-	echo "DEBUG | Creating repofile '$repofile'"
+	f_print_output "INFO"  "Starting reposync for repoid '${repo}' to '${download_path} using reposync"
+	f_print_output "DEBUG" "Creating repofile '$repofile'"
 	cat << EOF > $repofile
 [$repo]
 baseurl=$repomirror
 enabled=1
 gpgcheck=0
 EOF
-	echo "DEBUG | Run reposync command"
+	f_print_output "DEBUG" "Run reposync command"
 	# --cachedir mandatory to avoid 'Error: Could not make cachedir, exiting' with random uid
 	reposync --repoid $repo \
 		--download_path $download_path \
@@ -45,7 +45,7 @@ function f_repo_sync_wget {
    repo=$1
    repomirror=$2
    download_path=$3
-   echo "INFO  | Starting reposync for repoid '${repo}' to '${download_path} using wget"
+   f_print_output "INFO" "Starting reposync for repoid '${repo}' to '${download_path} using wget"
    # -N  : Turn on time-stamping
    # -np : Do not ever ascend to the parent directory when retrieving recursively
    # -r  : Turn on recursive retrieving.
