@@ -50,10 +50,15 @@ app.get('/repository/sync/:id', function (req, res) {
       repo = JSON.stringify(result, null, 2);
       out = fs.openSync('/tmp/' + result.repoid + '.log', 'a');
       err = fs.openSync('/tmp/' + result.repoid + '.log', 'a');
-      reposyn_process = spawn("/app/reposync.sh", ["-n", result.repoid, 
-                                                   "-b", result.breed, 
-                                                   "-r", result.repomirror, 
-                                                   "-d", result.download_path], {
+      process_args = ["-n", result.repoid,
+                      "-b", result.breed,
+                      "-r", result.repomirror,
+                      "-d", result.download_path];
+      if (result.proxy){
+        process_args.push("-p")
+        process_args.push(result.proxy)
+      }
+      reposyn_process = spawn("/app/reposync.sh", process_args, {
          detached: true,
          stdio: [ 'ignore', out, err ]
       });

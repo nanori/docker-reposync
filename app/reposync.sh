@@ -89,6 +89,13 @@ while true; do
       download_path="$2"; shift 2 ;;
     -b | --breed )
       breed="$2"; shift 2 ;;
+    -p | --proxy )
+      export http_proxy="$2"
+      export https_proxy="$2"
+      export HTTP_PROXY="$2"
+      export HTTPS_PROXY="$2"
+      shift 2
+      ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
