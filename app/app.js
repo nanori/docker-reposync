@@ -72,7 +72,7 @@ app.get('/repository/sync/:id', function (req, res) {
             r.table('reposync').get(req.params['id']).update({status: "Synchronized", lastupdate: jsonDate}).run(connection, function(err, result) {
             });
          } else {
-            r.table('reposync').get(req.params['id']).update({status: `Sync error (${code})`, lastupdate: jsonDate}).run(connection, function(err, result) {
+            r.table('reposync').get(req.params['id']).update({status: `Sync error (${code})`}).run(connection, function(err, result) {
             });
          }
       });

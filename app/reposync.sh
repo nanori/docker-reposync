@@ -53,6 +53,7 @@ function f_repo_sync_wget {
    # -nd : Do not create a hierarchy of directories when retrieving recursively
    # -P  : Downdload dir
    wget -N -np -r -l inf -nd --progress=bar:force -P $download_path $repomirror
+   return $?
 }
 
 function f_print_output {
@@ -117,9 +118,11 @@ case "$breed" in
       ;;
    wget )
       f_repo_sync_wget $repo $repomirror $download_path
+      repo_errors=$?
       ;;
 esac
 
 f_print_output "INFO" "Chanching mod of downloaded files"
 chmod 775 -R $download_path
 f_print_output "INFO"  "All repo synchronized. Repositories in error : $repo_errors"
+exit $repo_errors
