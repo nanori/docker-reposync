@@ -27,7 +27,7 @@ function f_repo_sync_yum {
 	cat << EOF > $repofile
 [$repo]
 baseurl=$repomirror
-proxy="$http_proxy"
+proxy=$http_proxy
 enabled=1
 gpgcheck=0
 EOF
