@@ -88,7 +88,7 @@ while true; do
     -n | --repoid ) 
       repo="$2"; shift 2 ;;
     -d | --download-path ) 
-      download_path="$2"; shift 2 ;;
+      relative_download_path="$2"; shift 2 ;;
     -b | --breed )
       breed="$2"; shift 2 ;;
     -p | --proxy )
