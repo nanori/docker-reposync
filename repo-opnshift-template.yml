@@ -48,8 +48,6 @@ objects:
     resources:
       requests:
         storage: "10Gi"
-    volumeName: "${REPOSITORY_SERVICE_NAME}-data"
-
 
 - apiVersion: "v1"
   kind: "PersistentVolumeClaim"
@@ -61,8 +59,6 @@ objects:
     resources:
       requests:
         storage: "10Gi"
-    volumeName: "${REPOSITORY_SERVICE_NAME}-db"
-
 
 - apiVersion: v1
   kind: DeploymentConfig
@@ -118,7 +114,7 @@ objects:
         volumes:
         - name: ${REPOSITORY_SERVICE_NAME}-data
           persistentVolumeClaim:
-          claimName: ${REPOSITORY_SERVICE_NAME}-data
+            claimName: ${REPOSITORY_SERVICE_NAME}-data
     triggers:
     - type: ConfigChange
 
@@ -184,7 +180,7 @@ objects:
         volumes:
         - name: ${REPOSITORY_SERVICE_NAME}-data
           persistentVolumeClaim:
-          claimName: ${REPOSITORY_SERVICE_NAME}-data
+            claimName: ${REPOSITORY_SERVICE_NAME}-data
     triggers:
     - type: ConfigChange
 
@@ -230,7 +226,7 @@ objects:
         volumes:
         - name: ${REPOSITORY_SERVICE_NAME}-db
           persistentVolumeClaim:
-          claimName: ${REPOSITORY_SERVICE_NAME}-db
+            claimName: ${REPOSITORY_SERVICE_NAME}-db
     triggers:
     - type: ConfigChange
 - apiVersion: v1
