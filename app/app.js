@@ -54,7 +54,7 @@ app.get('/repository/sync/:id', function (req, res) {
                       "-b", result.breed,
                       "-r", result.repomirror,
                       "-d", result.download_path];
-      if (result.proxy){
+      if (result.proxy && result.proxy != "" ){
         process_args.push("-p")
         process_args.push(result.proxy)
       }
